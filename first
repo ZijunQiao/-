@@ -1,26 +1,36 @@
 # Use audio loader explicitly for loading audio waveform :
+import pathlib
+from spleeter.separator import Separator
 from spleeter.audio.adapter import get_default_audio_adapter
-audio_loader = get_default_audio_adapter()
-sample_rate = 44100
-waveform, _ = audio_loader.load('/path/to/audio/file', sample_rate=sample_rate)
-# Perform the separation :
-prediction = separator.separate(waveform)
+separator = Separator('spleeter:2stems')
+audio_adapter = get_default_audio_adapter()
 
+sample_rate = 44100
+waveform, _ = audio_loader.load('/content/sample_data/hua.mp3', sample_rate=sample_rate)
+separator.separate_to_file(
+            '/content/sample_data/hua.mp3',
+            '/content/sample_data/',
+            audio_adapter=audio_adapter,
+            synchronous=False)
+            
 from pydub import AudioSegment
-from pydub.utils import db_to_float
-# Let's load up the audio we need...
-podcast = AudioSegment.from_mp3("podcast.mp3")
-intro = AudioSegment.from_wav("intro.wav")
-outro = AudioSegment.from_wav("outro.wav")
-# Let's consider anything that is 30 decibels quieter than
-# the average volume of the podcast to be silence
-average_loudness = podcast.rms
-silence_threshold = average_loudness * db_to_float(-30)
-# filter out the silence
-podcast_parts = (ms for ms in podcast if ms.rms > silence_threshold)
-# combine all the chunks back together
-podcast = reduce(lambda a, b: a + b, podcast_parts)
-# add on the bumpers
-podcast = intro + podcast + outro
-# save the result
-podcast.export("podcast_processed.mp3", format="mp3")
+from pydub.silence import split_on_silence
+sound =  AudioSegment.from_file("/content/sample_data/hua/vocals.wav", format="wav")
+chunks = split_on_silence(sound, 
+    # must be silent for at least half a second
+    min_silence_len=3000,
+
+    # consider it silent if quieter than -30 dBFS
+    silence_thresh=-37,
+    keep_silence=False,
+    seek_step=5
+)
+for i, chunk in enumerate(chunks):
+    chunk.export("/content/sample_data/hua/chunk{0}.mp3".format(i), format="mp3")
+    
+from pydub import AudioSegment
+sound1 = AudioSegment.from_mp3('/content/sample_data/hua/chunk1.mp3')
+sound2 = AudioSegment.from_mp3('/content/sample_data/hua/chunk2.mp3')
+#sound3 = AudioSegment.from_mp3('/content/sample_data/hua/chunk3.mp3')
+hua=sound1+sound2 #+sound3
+hua.export("/content/sample_data/hua/hua.mp3", format="mp3")
