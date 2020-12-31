@@ -1,5 +1,9 @@
-# Use audio loader explicitly for loading audio waveform :
 import pathlib
+from pydub import AudioSegment
+sound=AudioSegment.from_file('/content/sample_data/Recording (autosaved).m4a')
+sound.export('/content/sample_data/Recording.mp3', format='mp3')
+
+# Use audio loader explicitly for loading audio waveform 
 from spleeter.separator import Separator
 from spleeter.audio.adapter import get_default_audio_adapter
 separator = Separator('spleeter:2stems')
@@ -12,7 +16,6 @@ separator.separate_to_file(
             audio_adapter=audio_adapter,
             synchronous=False)
 #split on silence           
-from pydub import AudioSegment
 from pydub.silence import split_on_silence
 sound =  AudioSegment.from_file("/content/sample_data/hua/vocals.wav", format="wav")
 chunks = split_on_silence(sound, 
