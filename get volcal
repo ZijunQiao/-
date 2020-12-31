@@ -4,15 +4,14 @@ from spleeter.separator import Separator
 from spleeter.audio.adapter import get_default_audio_adapter
 separator = Separator('spleeter:2stems')
 audio_adapter = get_default_audio_adapter()
-
-sample_rate = 44100
-waveform, _ = audio_loader.load('/content/sample_data/hua.mp3', sample_rate=sample_rate)
+#sample_rate = 44100
+#waveform, _ = audio_loader.load('/content/sample_data/hua.mp3', sample_rate=sample_rate)
 separator.separate_to_file(
             '/content/sample_data/hua.mp3',
             '/content/sample_data/',
             audio_adapter=audio_adapter,
             synchronous=False)
-            
+#split on silence           
 from pydub import AudioSegment
 from pydub.silence import split_on_silence
 sound =  AudioSegment.from_file("/content/sample_data/hua/vocals.wav", format="wav")
@@ -26,11 +25,24 @@ chunks = split_on_silence(sound,
     seek_step=5
 )
 for i, chunk in enumerate(chunks):
-    chunk.export("/content/sample_data/hua/chunk{0}.mp3".format(i), format="mp3")
-    
-from pydub import AudioSegment
-sound1 = AudioSegment.from_mp3('/content/sample_data/hua/chunk1.mp3')
-sound2 = AudioSegment.from_mp3('/content/sample_data/hua/chunk2.mp3')
-#sound3 = AudioSegment.from_mp3('/content/sample_data/hua/chunk3.mp3')
-hua=sound1+sound2 #+sound3
+    chunk.export("/outpath/chunk{0}.mp3".format(i), format="mp3")
+#combination    
+sound1 = AudioSegment.from_mp3('/outpath/chunk1.mp3')
+sound2 = AudioSegment.from_mp3('/outpath/chunk2.mp3')
+sound3 = AudioSegment.from_mp3('/outpath/chunk3.mp3')
+hua=sound1+sound2+sound3
 hua.export("/content/sample_data/hua/hua.mp3", format="mp3")
+
+#get background
+sound=AudioSegment.from_file('inputpath')
+#channel_count = sound.channels
+#print(channel_count)
+# change valumn
+# for single channel,it will be split to multiple channels
+balance_adjusted = sound.apply_gain_stereo(-10, +10) 
+#balance_adjusted.export('outputpath', format='mp3')
+
+snd_l, snd_r = balance_adjusted.split_to_mono()
+snd_r_inv = snd_r.invert_phase() 
+bg_music = snd_l.overlay(snd_r_inv) # but still have noise
+bg_music.export('outpath', format='mp3')
